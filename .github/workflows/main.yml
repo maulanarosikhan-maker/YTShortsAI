@@ -19,15 +19,13 @@ jobs:
     - name: Install FFmpeg
       run: |
         sudo apt update
-        sudo apt install -y ffmpeg
+        sudo apt install -y ffmpeg libavcodec-extra
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libavcodec-extra
         python -m pip install --upgrade pip setuptools wheel
         pip install moviepy==1.0.3
         pip install -r requirements.txt
-        python -m imageio_ffmpeg.download
 
     - name: Jalankan bot YouTube Shorts AI
       env:
