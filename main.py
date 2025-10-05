@@ -13,24 +13,24 @@ tts.save("audio.mp3")
 # ======== 2. Membuat background warna ========
 background = ColorClip(size=(720, 1280), color=(0, 0, 255), duration=10)
 
-# ======== 3. Membuat teks di tengah video (tanpa ImageMagick) ========
-# Gunakan method='caption' agar tidak butuh ImageMagick
+# ======== 3. Membuat teks di tengah video TANPA ImageMagick ========
+# Gunakan method='caption' supaya MoviePy tidak memanggil ImageMagick
 text_clip = TextClip(
     text,
     fontsize=60,
     color='white',
     size=(700, None),
-    method='caption'  # <— penting!
+    method='caption'  # <=== WAJIB ada baris ini!
 ).set_duration(10).set_position('center')
 
-# ======== 4. Menggabungkan video dan teks ========
+# ======== 4. Gabungkan background dan teks ========
 final_clip = CompositeVideoClip([background, text_clip])
 
-# ======== 5. Menambahkan audio ========
+# ======== 5. Tambahkan audio ========
 audio = AudioFileClip("audio.mp3")
 final_clip = final_clip.set_audio(audio)
 
-# ======== 6. Menyimpan hasil video ========
+# ======== 6. Simpan hasil video ========
 output_path = "output.mp4"
 final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
 
@@ -44,7 +44,7 @@ if os.path.exists("client_secret.json"):
 
         request_body = {
             'snippet': {
-                'categoryId': '22',  # People & Blogs
+                'categoryId': '22',
                 'title': 'Video Shorts Otomatis AI',
                 'description': 'Video ini dibuat otomatis oleh AI!',
                 'tags': ['AI', 'Shorts', 'Automation']
