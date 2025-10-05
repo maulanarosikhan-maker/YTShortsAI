@@ -1,0 +1,29 @@
+name: YouTube Shorts AI Auto
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"  # Jalankan otomatis setiap 3 jam
+  workflow_dispatch:        # Bisa dijalankan manual juga
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Jalankan bot YouTube Shorts AI
+        env:
+          CLIENT_SECRET_JSON: ${{ secrets.CLIENT_SECRET_JSON }}
+        run: |
+          echo "$CLIENT_SECRET_JSON" > client_secret.json
+          python main.py
