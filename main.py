@@ -1,51 +1,66 @@
-import random, os
+import os
 from gtts import gTTS
-from moviepy.editor import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
+from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.credentials import Credentials
 
-QUOTE_FILE = "quotes.txt"
-BG_VIDEO = "bg.mp4"
+# === 1. Generate Ide Konten Otomatis ===
+def generate_idea():
+    ideas = [
+        "Fakta unik tentang luar angkasa",
+        "Kisah misteri yang belum terpecahkan",
+        "Motivasi hidup 15 detik",
+        "AI menjelaskan sejarah singkat dunia",
+        "Tips sukses singkat dari Elon Musk"
+    ]
+    import random
+    return random.choice(ideas)
 
-# Ambil teks acak
-with open(QUOTE_FILE, "r", encoding="utf-8") as f:
-    quotes = f.readlines()
-quote = random.choice(quotes).strip()
-print("🎙️ Quote:", quote)
+# === 2. Buat suara otomatis dari teks ===
+def generate_audio(text, filename="audio.mp3"):
+    tts = gTTS(text=text, lang="id")
+    tts.save(filename)
+    print(f"🎤 Audio berhasil dibuat: {filename}")
 
-# Buat suara
-tts = gTTS(quote, lang='id')
-tts.save("voice.mp3")
+# === 3. Buat video pendek otomatis ===
+def create_video(audio_file, output_file="output.mp4"):
+    # Buat background dari warna hitam polos
+    image = ImageClip("https://picsum.photos/720/1280", duration=15)  # gambar acak
+    audio = AudioFileClip(audio_file)
+    video = image.set_audio(audio)
+    video = video.set_duration(audio.duration)
+    video.write_videofile(output_file, fps=24)
+    print(f"🎬 Video berhasil dibuat: {output_file}")
 
-# Buat video
-video = VideoFileClip(BG_VIDEO).subclip(0, 15)
-audio = AudioFileClip("voice.mp3")
+# === 4. Upload ke YouTube Shorts ===
+def upload_to_youtube(video_file, title, description="Video otomatis oleh AI"):
+    if not os.path.exists("client_secret.json"):
+        raise Exception("client_secret.json tidak ditemukan!")
 
-# Tambah teks bergaya gelap (horor/sejarah)
-txt = TextClip(quote, fontsize=45, color='white', font="Arial-Bold", size=(720,1280), method='caption')
-txt = txt.set_pos('center').set_duration(15)
+    creds = Credentials.from_authorized_user_file("client_secret.json", ["https://www.googleapis.com/auth/youtube.upload"])
+    youtube = build("youtube", "v3", credentials=creds)
 
-final = CompositeVideoClip([video.resize((720,1280)), txt])
-final = final.set_audio(audio)
-final.write_videofile("short.mp4", fps=24, codec="libx264")
-
-# Upload ke YouTube
-flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", ["https://www.googleapis.com/auth/youtube.upload"])
-credentials = flow.run_console()
-youtube = build('youtube', 'v3', credentials=credentials)
-
-upload_request = youtube.videos().insert(
-    part="snippet,status",
-    body={
+    request_body = {
         "snippet": {
-            "title": f"🕯️ Cerita Singkat | {quote[:30]}...",
-            "description": "Video otomatis AI (horor, sejarah, motivasi, fakta)",
-            "tags": ["horor", "sejarah", "motivasi", "ai", "shorts"]
+            "categoryId": "22",
+            "title": title,
+            "description": description,
+            "tags": ["AI", "Shorts", "Automation"]
         },
         "status": {"privacyStatus": "public"}
-    },
-    media_body=MediaFileUpload("short.mp4")
-)
-response = upload_request.execute()
-print("✅ Upload selesai:", response["id"])
+    }
+
+    media = MediaFileUpload(video_file, chunksize=-1, resumable=True, mimetype="video/mp4")
+    upload = youtube.videos().insert(part="snippet,status", body=request_body, media_body=media)
+    response = upload.execute()
+    print(f"✅ Video berhasil diupload: https://youtu.be/{response['id']}")
+
+# === 5. Jalankan otomatis ===
+if __name__ == "__main__":
+    idea = generate_idea()
+    print(f"💡 Ide konten: {idea}")
+
+    generate_audio(idea)
+    create_video("audio.mp3", "shorts.mp4")
+    upload_to_youtube("shorts.mp4", idea)
