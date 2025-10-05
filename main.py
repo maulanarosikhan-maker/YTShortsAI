@@ -5,22 +5,22 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 
-# ======== 1. Membuat audio dari teks ========
+# ======== 1. Buat audio dari teks ========
 text = "Halo! Ini adalah video Shorts otomatis yang dibuat dengan AI!"
 tts = gTTS(text, lang='id')
 tts.save("audio.mp3")
 
-# ======== 2. Membuat background warna ========
+# ======== 2. Buat background warna ========
 background = ColorClip(size=(720, 1280), color=(0, 0, 255), duration=10)
 
-# ======== 3. Membuat teks di tengah video TANPA ImageMagick ========
-# Gunakan method='caption' supaya MoviePy tidak memanggil ImageMagick
+# ======== 3. Buat teks di tengah video tanpa ImageMagick ========
+# Gunakan method='label' agar pakai PIL (tidak butuh ImageMagick)
 text_clip = TextClip(
-    text,
+    txt=text,
     fontsize=60,
     color='white',
     size=(700, None),
-    method='caption'  # <=== WAJIB ada baris ini!
+    method='label'  # ✅ aman tanpa ImageMagick
 ).set_duration(10).set_position('center')
 
 # ======== 4. Gabungkan background dan teks ========
@@ -44,7 +44,7 @@ if os.path.exists("client_secret.json"):
 
         request_body = {
             'snippet': {
-                'categoryId': '22',
+                'categoryId': '22',  # People & Blogs
                 'title': 'Video Shorts Otomatis AI',
                 'description': 'Video ini dibuat otomatis oleh AI!',
                 'tags': ['AI', 'Shorts', 'Automation']
@@ -67,4 +67,3 @@ if os.path.exists("client_secret.json"):
         print("❌ Gagal upload ke YouTube:", e)
 else:
     print("⚠️ File client_secret.json tidak ditemukan, upload manual.")
-
