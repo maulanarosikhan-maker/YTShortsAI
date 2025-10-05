@@ -1,8 +1,10 @@
+gtts
 moviepy
-requests
-pytube
+imageio-ffmpeg
 google-auth
 google-auth-oauthlib
+google-auth-httplib2
 google-api-python-client
-imageio
-imageio-ffmpeg
+requests
+python-dotenv
+Pillow
