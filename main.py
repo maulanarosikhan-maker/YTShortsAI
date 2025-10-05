@@ -1,4 +1,4 @@
-from moviepy.editor import ImageClip, CompositeVideoClip, ColorClip, AudioFileClip
+from moviepy import ImageClip, CompositeVideoClip, ColorClip, AudioFileClip
 from gtts import gTTS
 from PIL import Image, ImageDraw, ImageFont
 import os
