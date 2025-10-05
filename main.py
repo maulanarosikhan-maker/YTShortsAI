@@ -15,16 +15,22 @@ tts.save("audio.mp3")
 background = ColorClip(size=(720, 1280), color=(0, 0, 255), duration=10)
 
 # ======== 3. Buat teks di gambar (tanpa ImageMagick) ========
-img = Image.new("RGBA", (700, 200), (0, 0, 0, 0))
+img_width, img_height = 700, 200
+img = Image.new("RGBA", (img_width, img_height), (0, 0, 0, 0))
 draw = ImageDraw.Draw(img)
 font = ImageFont.load_default()
-text_w, text_h = draw.textsize(text, font=font)
-x, y = (700 - text_w) // 2, (200 - text_h) // 2
+
+# Hitung ukuran teks — aman untuk Pillow versi baru
+bbox = draw.textbbox((0, 0), text, font=font)
+text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+x, y = (img_width - text_w) // 2, (img_height - text_h) // 2
+
 draw.text((x, y), text, fill="white", font=font)
-img.save("text.png")
+text_image_path = "text.png"
+img.save(text_image_path)
 
 # ======== 4. Buat klip teks dari gambar ========
-text_clip = ImageClip("text.png").set_duration(10).set_position("center")
+text_clip = ImageClip(text_image_path).set_duration(10).set_position("center")
 
 # ======== 5. Gabungkan background + teks ========
 final_clip = CompositeVideoClip([background, text_clip])
