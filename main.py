@@ -1,35 +1,70 @@
-name: YouTube Shorts AI Auto
+from moviepy.editor import TextClip, CompositeVideoClip, ColorClip, AudioFileClip
+from gtts import gTTS
+import os
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2.credentials import Credentials
 
-on:
-  workflow_dispatch:
+# ======== 1. Membuat audio dari teks ========
+text = "Halo! Ini adalah video Shorts otomatis yang dibuat dengan AI!"
+tts = gTTS(text, lang='id')
+tts.save("audio.mp3")
 
-jobs:
-  run:
-    runs-on: ubuntu-latest
+# ======== 2. Membuat background warna ========
+background = ColorClip(size=(720, 1280), color=(0, 0, 255), duration=10)
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+# ======== 3. Membuat teks di tengah video (tanpa ImageMagick) ========
+# Gunakan method='caption' agar tidak butuh ImageMagick
+text_clip = TextClip(
+    text,
+    fontsize=60,
+    color='white',
+    size=(700, None),
+    method='caption'  # <— penting!
+).set_duration(10).set_position('center')
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+# ======== 4. Menggabungkan video dan teks ========
+final_clip = CompositeVideoClip([background, text_clip])
 
-    - name: Install FFmpeg
-      run: |
-        sudo apt update
-        sudo apt install -y ffmpeg libavcodec-extra
+# ======== 5. Menambahkan audio ========
+audio = AudioFileClip("audio.mp3")
+final_clip = final_clip.set_audio(audio)
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install moviepy==1.0.3 gTTS google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
+# ======== 6. Menyimpan hasil video ========
+output_path = "output.mp4"
+final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
 
-    - name: Jalankan bot YouTube Shorts AI
-      env:
-        CLIENT_SECRET_JSON: ${{ secrets.CLIENT_SECRET_JSON }}
-      run: |
-        echo "$CLIENT_SECRET_JSON" > client_secret.json
-        python main.py
+print("✅ Video berhasil dibuat:", output_path)
+
+# ======== 7. Upload otomatis ke YouTube ========
+if os.path.exists("client_secret.json"):
+    try:
+        creds = Credentials.from_authorized_user_file("client_secret.json")
+        youtube = build('youtube', 'v3', credentials=creds)
+
+        request_body = {
+            'snippet': {
+                'categoryId': '22',  # People & Blogs
+                'title': 'Video Shorts Otomatis AI',
+                'description': 'Video ini dibuat otomatis oleh AI!',
+                'tags': ['AI', 'Shorts', 'Automation']
+            },
+            'status': {
+                'privacyStatus': 'public',
+                'selfDeclaredMadeForKids': False
+            }
+        }
+
+        mediaFile = MediaFileUpload(output_path)
+        response = youtube.videos().insert(
+            part='snippet,status',
+            body=request_body,
+            media_body=mediaFile
+        ).execute()
+
+        print("✅ Video berhasil diupload! ID:", response['id'])
+    except Exception as e:
+        print("❌ Gagal upload ke YouTube:", e)
+else:
+    print("⚠️ File client_secret.json tidak ditemukan, upload manual.")
 
